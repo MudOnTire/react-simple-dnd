@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Droppable } from 'react-beautiful-dnd';
+import { Droppable, Draggable } from 'react-beautiful-dnd';
 import Task from './Task';
 
 const Container = styled.div`
@@ -10,6 +10,7 @@ const Container = styled.div`
   width:220px;
   display:flex;
   flex-direction:column;
+  background-color:white;
 `;
 const Title = styled.h3`
   padding:8px;
@@ -22,33 +23,58 @@ const TaskList = styled.div`
   min-height:100px;
 `;
 
+class InnerList extends React.Component {
+
+  shouldComponentUpdate(nextProps) {
+    if (nextProps.tasks === this.props.tasks) {
+      return false;
+    }
+    return true;
+  }
+
+  render() {
+    const { tasks } = this.props;
+    return tasks.map((task, index) => <Task key={task.id} task={task} index={index} />);
+  }
+}
+
 export default class extends React.Component {
   render() {
 
-    const { column, tasks, isDropDisabled } = this.props;
+    const { column, tasks, isDropDisabled, index } = this.props;
 
     return (
-      <Container>
-        <Title>{column.title}</Title>
-        <Droppable
-          droppableId={column.id}
-          // type={column.id === 'column3' ? 'done' : 'active'}
-          isDropDisabled={isDropDisabled}
-        >
-          {
-            (provided, snapshot) => (
-              <TaskList
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                isDraggingOver={snapshot.isDraggingOver}
+      <Draggable draggableId={column.id} index={index}>
+        {
+          (provided) => (
+            <Container
+              {...provided.draggableProps}
+              ref={provided.innerRef}
+            >
+              <Title {...provided.dragHandleProps}>
+                {column.title}
+              </Title>
+              <Droppable
+                droppableId={column.id}
+                type='task'
               >
-                {tasks.map((task, index) => <Task key={task.id} task={task} index={index} />)}
-                {provided.placeholder}
-              </TaskList>
-            )
-          }
-        </Droppable>
-      </Container>
+                {
+                  (provided, snapshot) => (
+                    <TaskList
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      isDraggingOver={snapshot.isDraggingOver}
+                    >
+                      <InnerList tasks={tasks} />
+                      {provided.placeholder}
+                    </TaskList>
+                  )
+                }
+              </Droppable>
+            </Container>
+          )
+        }
+      </Draggable>
     )
   }
 }
